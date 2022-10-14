@@ -3,22 +3,28 @@
 # TODO 1. Recieve and Send data to clients
 #
 import socket
-from string import ascii_letters, ascii_lowercase, ascii_uppercase
-from time import sleep
+from string import ascii_letters
 import tkinter
 import random
 import threading
 from datetime import datetime
+from os import mkdir
+from os.path import exists
+
+logfolder = 'Chat_Logs' # Log Folder
 
 #? This will save listbox into random Log file
 def SaveLog():
-    randomlogName = "".join(random.choice(ascii_letters) for _ in range(10))
+    if not exists(logfolder): # Create folder for datas
+        mkdir(logfolder)
+
+    randomlogName = "".join(random.choice(ascii_letters) for _ in range(12))
     listbox.insert(tkinter.END, "Closing")
     listbox.insert(0, f"[{datetime.now()}]")
-    s=open(f"LOG-{randomlogName}{random.randrange(0, 10000)}.txt", "w+")
+    s=open(f"{logfolder}/LOG-{randomlogName}{random.randrange(0, 999999)}.txt", "w+") # Create random log files
     get_content = listbox.get(0, tkinter.END)
-    for x in get_content:
-        s.write(f"{x}\n")
+    for data in get_content:
+        s.write(f"{data}\n")
     tk.destroy()
 
 port = random.randrange(1024, 65534)  # Open random port from 1024-65534
