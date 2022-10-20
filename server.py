@@ -3,10 +3,11 @@
 # TODO 1. Recieve and Send data to clients
 #
 import socket
+from sqlite3 import connect
 from string import ascii_letters
 import tkinter
 import random
-import multiprocessing
+import threading
 from datetime import datetime
 from os import mkdir
 from os.path import exists
@@ -14,21 +15,11 @@ from os.path import exists
 port = random.randrange(1024, 65534)
 clients = []
 addresses = []
-
 logfolder = 'Chat_Logs' # Log Folder
-
-def listen_datas():
-    global clients, addresses
-    print("Recieving data")
-    print(clients)
-    while True:
-        for client in clients:
-            data = client.recv(1024)
-            print(data)
-            client.send(data)
 
 #? This will save listbox into random Log file
 def SaveLog():
+    global connected
     if not exists(logfolder): # Create folder for datas
         mkdir(logfolder)
 
@@ -44,24 +35,38 @@ def SaveLog():
 def listen_server(server):
     global clients, addresses
     conn, address = server.accept()
-    print(conn)
     clients.append(conn)
     addresses.append(address)
-    p1 = multiprocessing.Process(target=listen_datas)
+    listbox.insert(0, f"{address[0]} has joined the chat")
+    p1 = threading.Thread(target=listen_datas)
     p1.start()
-    while True:
+    while 1:
         print("Connected socket")
         conn, address = server.accept()
-        print (conn, address)
+        p1.start()
         clients.append(conn)
         addresses.append(address)
-        print(clients, address)
+        listbox.insert(0, f"{address[0]} has joined the chat")
+
+def listen_datas():
+    global clients, addresses
+    print("Recieving data")
+    print(clients)
+    while 1:
+        for client in clients:
+            try:
+                data = client.recv(1024).decode()
+                listbox.insert(0, f"{client.getpeername()[0]} > {data}")
+                client.send(f"{client.getpeername()[0]} > {data}".encode())
+            except ConnectionResetError:
+                pass
 
 if __name__ == "__main__":
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((socket.gethostbyname(socket.gethostname()), port))
     server.listen(20)
-    process1 = multiprocessing.Process(target=listen_server, args=(server,))
+    process1 = threading.Thread(target=listen_server, args=(server,))
+    process1.daemon = True
     process1.start()
 
     #? Tkinter
@@ -78,8 +83,5 @@ if __name__ == "__main__":
                                 borderwidth=0, highlightthickness=0, fg="#f5f0f0", font="System 14", selectbackground="#B2B2B2", selectforeground="#2E2E2E") # Listbox  
     
     text1.pack();text2.pack();text3.pack();listbox.pack()
-    
     tk.protocol("WM_DELETE_WINDOW", SaveLog)
-
     tk.mainloop()
-    process1.kill()
