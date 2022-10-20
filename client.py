@@ -5,11 +5,7 @@
 #
 import tkinter
 import socket
-import multiprocessing
-
-from tkinter.messagebox import showinfo
-
-connected = False #!Change to False if server.py is finished)
+import threading
 
 def sendmsg(_):
     global client
@@ -20,15 +16,19 @@ def sendmsg(_):
         entrypoint.delete(0, len(entrypoint.get())) # Delete message
 
 def get_data(client):
-    data = client.recv(1024).decode()
-    listbox.insert(0, data)
+    while True:
+        data = client.recv(1024).decode()
+        listbox.insert(0, data)
 
-#TODO Server connecting
+def start_server():
+    p1 = threading.Thread(target=connect_server)
+    p1.start()    
+
 def connect_server():
     global client
     #? Connect to the server
     client.connect((ipinput.get(), int(portinput.get())))
-    p1 = multiprocessing.Process(target=get_data,args=(client,))
+    p1 = threading.Thread(target=get_data,args=(client,))
     p1.start()
     #? Prepare chat
     ipinput.destroy()
@@ -56,7 +56,7 @@ if __name__ == "__main__":
                                 borderwidth=0, fg="#f5f0f0", selectbackground="#B2B2B2", selectforeground="#2E2E2E", justify=tkinter.CENTER)
     
     connectbutt = tkinter.Button(tk, width=20, height=2, text="Connect", background="#1f1f1f", 
-                                fg="#f5f0f0", borderwidth=0,activebackground="#363636", command=connect_server)
+                                fg="#f5f0f0", borderwidth=0,activebackground="#363636", command=start_server)
     
     listbox = tkinter.Listbox(tk,width=100, height=19, background="#212021", 
                                 borderwidth=0, highlightthickness=0, fg="#f5f0f0", font="System 14", selectbackground="#B2B2B2", selectforeground="#2E2E2E")
